@@ -9,19 +9,23 @@ from .utils import func_args_preprocessing
 
 class CoinGeckoAPI:
     __API_URL_BASE = 'https://api.coingecko.com/api/v3/'
+    def __init__(self, api_base_url=__API_URL_BASE, proxies=None):
+         self.api_base_url = api_base_url
+         self.request_timeout = 120
 
-    def __init__(self, api_base_url=__API_URL_BASE):
-        self.api_base_url = api_base_url
-        self.request_timeout = 120
-
-        self.session = requests.Session()
-        retries = Retry(total=5, backoff_factor=0.5, status_forcelist=[502, 503, 504])
-        self.session.mount('http://', HTTPAdapter(max_retries=retries))
+         self.proxies = proxies
+         if not proxies:
+             self.session = requests.Session()
+             retries = Retry(total=5, backoff_factor=0.5, status_forcelist=[502, 503, 504])
+             self.session.mount('http://', HTTPAdapter(max_retries=retries))
 
     def __request(self, url):
         # print(url)
         try:
-            response = self.session.get(url, timeout=self.request_timeout)
+            if self.proxies:
+                response = requests.get(url, timeout=self.request_timeout, proxies=self.proxies)
+            else:
+                response = self.session.get(url, timeout=self.request_timeout)
         except requests.exceptions.RequestException:
             raise
 
@@ -39,6 +43,7 @@ class CoinGeckoAPI:
                 pass
 
             raise
+
 
     def __api_url_params(self, api_url, params, api_url_has_params=False):
         if params:
